@@ -1,122 +1,198 @@
- 
-![Architecture Diagram](https://github.com/DivineSamOfficial/SmartCityProject/blob/main/Analysis-1.png)
-# Smart City End to End Real-Time Data Streaming Pipeline
+# Smart City End-to-End Real-Time Data Streaming Pipeline
+
+![System Architecture](SysArch.png)
 
 ## Project Overview
 
-This project aims to create a comprehensive real-time data streaming pipeline for a Smart City initiative. It captures and processes real-time data from a vehicle traveling from London to Birmingham, including vehicle data, GPS data, emergency incidents, weather conditions, and camera footage. The pipeline leverages a combination of IoT devices, Apache Kafka, Apache Spark, Docker, and AWS services to ensure efficient data ingestion, processing, storage, and visualization.
+This project implements a scalable, production-grade real-time data streaming pipeline for Smart City initiatives. It simulates and streams real-time telemetry from vehicles traveling from London to Birmingham—including vehicle status, GPS tracking, traffic camera feeds, weather metrics, and emergency incidents. 
 
-## Architecture Overview
+The architecture combines IoT simulation, Apache Kafka, Apache Spark Streaming, Docker, and AWS services (S3, Glue, Athena, and QuickSight) to ensure high-throughput ingestion, distributed processing, structured Parquet storage, and interactive analytics.
 
-![Architecture Diagram](https://github.com/DivineSamOfficial/SmartCityProject/blob/main/SysArch.png)
+---
+
+## Architecture
+
+![Analysis Dashboard](Analysis-1.png)
+
+```
+[IoT Data Simulator]
+        │
+        ▼ (JSON messages)
+[Apache Kafka & Zookeeper (Docker)]
+  ├── vehicle_data
+  ├── gps_data
+  ├── traffic_data
+  ├── weather_data
+  └── emergency_data
+        │
+        ▼ (Structured Streaming)
+[Apache Spark Cluster 3.5.1]
+  ├── Schema validation & Watermarking
+  └── Checkpointed Parquet Stream Writer
+        │
+        ▼ (s3a://)
+[Amazon S3 Data Lake]
+        │
+        ▼
+[AWS Glue Data Catalog & Crawlers]
+        │
+        ▼
+[Amazon Athena (Ad-hoc SQL)]
+        │
+        ▼
+[Amazon QuickSight (BI Dashboards)]
+```
+
+---
 
 ## Technologies Used
 
-- **IoT Devices**: For capturing real-time data.
-- **Apache Zookeeper**: For managing and coordinating Kafka brokers.
-- **Apache Kafka**: For real-time data ingestion into different topics.
-- **Apache Spark**: For real-time data processing and streaming.
-- **Docker**: For containerization and orchestration of Kafka and Spark.
-- **Python**: For data processing scripts.
-- **AWS Cloud**: 
-  - **S3**: For storing processed data as Parquet files.
-  - **Glue**: For data extraction and cataloging.
-  - **Athena**: For querying processed data.
-  - **IAM**: For managing access and permissions.
-  - **Redshift**: For data warehousing and analytics.
-- **Amazon QuickSight**: For data visualization and dashboarding.
+- **IoT Data Simulation**: Python-based telemetry generator producing realistic spatial-temporal trip data.
+- **Apache Kafka & Zookeeper**: Distributed streaming platform for fault-tolerant data ingestion across multiple topics.
+- **Apache Spark (v3.5.1)**: Distributed streaming engine running Spark Structured Streaming with S3A connectors.
+- **Docker & Docker Compose**: Containerization and local orchestration of Kafka brokers, Zookeeper, Spark master, and Spark workers.
+- **Python**: Application logic using `confluent-kafka`, `pyspark`, and `simplejson`.
+- **AWS Cloud**:
+  - **Amazon S3**: High-durability data lake storing processed partitioned Parquet files.
+  - **AWS Glue**: Schema discovery, metadata cataloging, and crawler orchestration.
+  - **Amazon Athena**: Serverless interactive SQL analytics engine over S3 Parquet tables.
+  - **AWS IAM**: Role-based access control and least-privilege security credentials.
+- **Amazon QuickSight**: Cloud-native BI service providing interactive real-time visual dashboards.
 
-## Project Workflow
+---
 
-1. **Data Ingestion**:
-   - IoT devices capture real-time data.
-   - Data is ingested into Kafka topics configured in Docker using `docker-compose.yml`.
+## Project Structure
 
-2. **Data Processing**:
-   - Apache Spark reads data from Kafka topics.
-   - Spark processes the data and writes it to AWS S3 as Parquet files.
-   - Spark Streaming is used for real-time data processing with checkpointing to handle data issues.
+```text
+├── jobs/
+│   ├── config.py           # Dynamic configuration & .env auto-loader
+│   ├── main.py             # IoT device simulator producing to Kafka
+│   └── spark-city.py       # Spark Structured Streaming job to S3
+├── docker-compose.yml       # Docker orchestrator for Kafka, Zookeeper, & Spark
+├── requirements.txt         # Python dependencies
+├── .env.example             # Template for required environment variables
+├── .gitignore               # Excludes secrets, bytecode, and virtual environments
+├── SysArch.png              # System architecture diagram
+├── Analysis-1.png           # QuickSight dashboard screenshot
+├── ERD Diagram.pdf          # Entity-Relationship diagram
+└── README.md
+```
 
-3. **Data Storage**:
-   - Processed data is stored in AWS S3.
-   - AWS Glue crawlers extract data from S3 and catalog it.
-
-4. **Data Querying**:
-   - AWS Athena queries the processed and cataloged data from Glue.
-
-5. **Data Visualization**:
-   - Amazon QuickSight visualizes the queried data with interactive dashboards.
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- AWS Account with appropriate IAM roles and permissions
-- Python 3.x
-- Apache Kafka and Apache Spark setup
+- **Docker Desktop** (with Docker Compose enabled)
+- **Python 3.9+** (Python 3.10 / 3.11 recommended)
+- **AWS Account** with an S3 bucket and IAM credentials with write access to S3.
+
+---
 
 ### Setup Instructions
 
-1. **Clone the Repository**:
-   ```sh
-   git clone https://github.com/SmartCityProject/smart-city-pipeline.git
-   cd smart-city-pipeline
-   ```
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/nrahil/Smart-City-Real-Time-Data-Engineering.git
+cd Smart-City-Real-Time-Data-Engineering
+```
 
-2. **Configure Docker**:
-   - Ensure Docker and Docker Compose are installed and running.
-   - Configure Kafka and Spark in `docker-compose.yml`.
-   - Start the services:
-     ```sh
-     docker-compose up -d
-     ```
+#### 2. Configure Environment Variables
+Create your local `.env` file from the provided `.env.example`:
 
-3. **AWS Configuration**:
-   - Set up AWS IAM roles and permissions.
-   - Configure AWS S3 buckets, Glue crawlers, and Athena.
-   - Update the configuration files with your AWS credentials and resource details.
+```bash
+cp .env.example .env
+```
 
-4. **Run Data Ingestion**:
-   - Start producing data to Kafka topics using IoT data simulators.
+Open `.env` and fill in your actual AWS credentials, bucket name, and Kafka broker address:
+```ini
+AWS_ACCESS_KEY=your_aws_access_key_id
+AWS_SECRET_KEY=your_aws_secret_access_key
+KAFKA_BOOTSTRAP_SERVERS=broker:29092
+S3_BUCKET=your-s3-bucket-name
+```
+> **Security Notice**: `.env` is ignored by Git to prevent accidental leaks. Do not commit secrets to source control.
 
-5. **Run Spark Streaming**:
-   - Submit the Spark job to process and stream data to S3:
-     ```sh
-     spark-submit --master local[2] your-spark-job.py
-     ```
+#### 3. Install Python Dependencies (Virtual Environment)
+```bash
+python -m venv .venv
+# On Windows:
+.venv\Scripts\activate
+# On Linux/macOS:
+source .venv/bin/activate
 
-6. **Query Data with Athena**:
-   - Use AWS Athena to query the processed data stored in S3.
+pip install -r requirements.txt
+```
 
-7. **Visualize Data with QuickSight**:
-   - Create an Amazon QuickSight analysis and build your dashboard with the processed data.
+#### 4. Start Infrastructure with Docker
+Spin up Zookeeper, the Kafka broker, Spark Master, and Spark Workers:
+```bash
+docker compose up -d
+```
 
-## Dashboard
+Verify that all containers are healthy:
+```bash
+docker compose ps
+```
 
-The dashboard created in Amazon QuickSight includes the following visualizations:
+Access Web UIs:
+- **Spark Master UI**: [http://localhost:9090](http://localhost:9090) (or port 8080 depending on mapping)
 
-- **Total Number of Entries in Each Table**: KPI widgets or bar charts.
-- **Average Speed of Vehicles**: Single KPI value.
-- **Number of Emergency Incidents**: Single KPI value.
-- **Time Series Analysis**: Line charts for vehicle data, weather data, and emergency incidents over time.
-- **Geographic Visualization**: Maps for route visualization and vehicle locations.
-- **Heat Maps**: For GPS data points density.
-- **Detailed Analysis**: Tables and pie charts for detailed data insights.
+---
 
-## Conclusion
+### Running the Streaming Pipeline
 
-This project demonstrates the power of modern data engineering tools to handle complex, real-time data streams and deliver actionable insights for Smart City initiatives. The use of AWS services ensures scalability, reliability, and ease of data management, making it an excellent example of an end-to-end data streaming pipeline.
+#### Step 1: Submit the Spark Streaming Job
+Run the Spark job inside the Spark master container:
+```bash
+docker exec -it smartcityproject-spark-master-1 spark-submit \
+  --master spark://spark-master:7077 \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.apache.hadoop:hadoop-aws:3.3.1,com.amazonaws:aws-java-sdk:1.11.469 \
+  jobs/spark-city.py
+```
+*Alternatively, if running locally outside Docker with PySpark:*
+```bash
+python jobs/spark-city.py
+```
+
+#### Step 2: Start the IoT Data Generator
+In a separate terminal window, launch the vehicle telemetry simulator:
+```bash
+python jobs/main.py
+```
+This generates real-time telemetry along the London-to-Birmingham route and streams it to Kafka topics:
+- `vehicle_data`
+- `gps_data`
+- `traffic_data`
+- `weather_data`
+- `emergency_data`
+
+---
+
+### AWS Analytics & Visualization
+
+1. **Verify S3 Buckets**: Confirm that Parquet files and checkpoints are being written to `s3://<your-s3-bucket>/data/` and `s3://<your-s3-bucket>/checkpoints/`.
+2. **AWS Glue Crawler**: Set up an AWS Glue Crawler targeting your S3 data path to automatically discover schemas and populate the Glue Data Catalog.
+3. **Query with Amazon Athena**: Execute SQL queries on the cataloged tables to inspect speeds, traffic, weather, and incidents.
+4. **Visualize with Amazon QuickSight**:
+   - Connect QuickSight to Athena as the data source.
+   - Build dashboards with:
+     - **KPI Cards**: Average vehicle speed, total incidents, active vehicle count.
+     - **Time-Series Charts**: Traffic density and weather patterns over time.
+     - **Geospatial Maps**: Route trajectories and GPS heat maps.
+
+---
+
+## Key Improvements & Bug Fixes in This Version
+
+- **Dynamic Environment Configuration**: Replaced hardcoded keys with seamless `.env` loading in `config.py` and `docker-compose.yml`.
+- **GPS Schema Fix**: Added missing `location` field in `gpsSchema` in `spark-city.py` to align with the generator payload.
+- **Multi-Stream Termination**: Updated `spark.streams.awaitAnyTermination()` so all 5 concurrent streaming queries remain active.
+- **Spark & Kafka Version Alignment**: Upgraded Docker images to `bitnamilegacy/spark:3.5.1` and updated `confluent-kafka>=2.6.0` to eliminate runtime compatibility issues.
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Thanks to the open-source community for providing the tools and libraries used in this project.
-- Special thanks to my team and mentors for their support and guidance.
-
-```
-
-This `README.md` provides a clear and detailed overview of the project, including the technologies used, workflow, setup instructions, and visualizations created in Amazon QuickSight. Adjust any specifics like the repository URL, architecture diagram path, and other details as needed.
+This project is licensed under the MIT License - see the LICENSE file for details.
